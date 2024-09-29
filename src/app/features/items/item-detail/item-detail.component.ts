@@ -1,31 +1,39 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../../core/api.service';
+import { Store } from '@ngrx/store';
+import { Item } from '../item.model';
+import * as fromItems from '../state/items.reducer';
+import * as ItemActions from '../state/items.actions';
 
 @Component({
   selector: 'app-item-detail',
-  templateUrl: './item-detail.component.html'
+  templateUrl: './item-detail.component.html',
+  styleUrls: ['./item-detail.component.css']
 })
 export class ItemDetailComponent implements OnInit {
-  item: any = {};
+  item: Item = { id: 0, name: '' };
 
   constructor(
     private route: ActivatedRoute,
-    private apiService: ApiService
+    private store: Store<fromItems.State>
   ) {}
 
   ngOnInit(): void {
     const id = +this.route.snapshot.paramMap.get('id')!;
-    this.apiService.getItem(id).subscribe((data: any) => {
-      this.item = data;
-    });
+    if (id) {
+      this.store.select(state => state.items.items.find(i => i.id === id)).subscribe(item => {
+        if (item) {
+          this.item = item;
+        }
+      });
+    }
   }
 
   saveItem(): void {
     if (this.item.id) {
-      this.apiService.updateItem(this.item.id, this.item).subscribe();
+      this.store.dispatch(ItemActions.updateItem({ item: this.item }));
     } else {
-      this.apiService.createItem(this.item).subscribe();
+      this.store.dispatch(ItemActions.addItem({ item: this.item }));
     }
   }
 }
